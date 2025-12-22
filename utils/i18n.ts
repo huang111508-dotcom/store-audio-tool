@@ -2,7 +2,7 @@ import { VibeType } from '../types';
 
 export const translations = {
   en: {
-    title: "StoreCast Studio",
+    title: "Longcheng Store Broadcaster",
     subtitle: "Professional In-Store Audio Sequencer",
     secureMode: "Offline Capable",
     aiDirector: "Project Settings",
@@ -48,7 +48,7 @@ export const translations = {
     }
   },
   zh: {
-    title: "StoreCast Studio 广播助手",
+    title: "龙城店广播助手",
     subtitle: "专业店内背景音乐合成工具",
     secureMode: "离线可用",
     aiDirector: "项目设置",

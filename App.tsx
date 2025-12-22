@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Upload, Music, ArrowUp, ArrowDown, X, Play, Download, Wand2, Radio, Loader2, Globe, Key, Settings, ZapOff } from 'lucide-react';
 import { Track, VibeType, ProcessingState, Language } from './types';
-import { decodeAudio, mergeBuffers, bufferToWav } from './utils/audio';
+import { decodeAudio, createWavHeader, audioBufferToWavPCM } from './utils/audio';
 import { generateIntroAudio, sortTracksSmartly } from './services/geminiService';
 import { translations } from './utils/i18n';
 
@@ -129,40 +129,56 @@ const App: React.FC = () => {
       const ctx = getAudioContext();
       if (ctx.state === 'suspended') await ctx.resume();
 
-      const buffers: AudioBuffer[] = [];
+      // We will store the PCM byte chunks here, NOT the full AudioBuffers
+      const chunks: Uint8Array[] = [];
+      let totalDataLength = 0;
       
       for (let i = 0; i < tracks.length; i++) {
         const track = tracks[i];
         setProcessing({ 
             status: 'decoding', 
             message: t.processingTrack(i + 1, tracks.length, track.name), 
-            progress: (i / tracks.length) * 50 
+            progress: (i / tracks.length) * 80 
         });
 
+        // Small delay to allow UI to update and GC to run
+        await new Promise(r => setTimeout(r, 50));
+
+        let buffer: AudioBuffer | null = null;
+
         if (track.buffer) {
-            buffers.push(track.buffer);
+            buffer = track.buffer;
         } else if (track.file) {
-            const b = await decodeAudio(track.file, ctx);
-            buffers.push(b);
+            buffer = await decodeAudio(track.file, ctx);
+        }
+
+        if (buffer) {
+            // Convert to 16-bit PCM bytes immediately
+            const pcmChunk = audioBufferToWavPCM(buffer);
+            chunks.push(pcmChunk);
+            totalDataLength += pcmChunk.length;
+            
+            // Allow buffer to be garbage collected (by losing reference in next loop iteration)
+            buffer = null; 
         }
       }
 
-      setProcessing({ status: 'merging', message: t.statusMerging, progress: 80 });
-      await new Promise(r => setTimeout(r, 100));
-      
-      const finalBuffer = mergeBuffers(buffers, ctx);
-      
       setProcessing({ status: 'merging', message: t.statusEncoding, progress: 90 });
       await new Promise(r => setTimeout(r, 100));
 
-      const wavBlob = bufferToWav(finalBuffer);
+      // Create WAV Header
+      // numChannels = 2 (stereo) as enforced by audioBufferToWavPCM
+      const header = createWavHeader(ctx.sampleRate, 2, totalDataLength);
+      
+      // Combine header and chunks into a Blob
+      const wavBlob = new Blob([header, ...chunks], { type: 'audio/wav' });
       setMergedBlob(wavBlob);
       
       setProcessing({ status: 'completed', message: t.statusReady, progress: 100 });
 
     } catch (e: any) {
       console.error(e);
-      setProcessing({ status: 'error', message: t.statusError, progress: 0 });
+      setProcessing({ status: 'error', message: t.statusError + " (" + (e.message || "Unknown error") + ")", progress: 0 });
     }
   };
 
