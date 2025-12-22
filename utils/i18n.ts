@@ -1,0 +1,95 @@
+import { VibeType } from '../types';
+
+export const translations = {
+  en: {
+    title: "StoreCast Studio",
+    subtitle: "Professional In-Store Audio Sequencer",
+    secureMode: "Offline Capable",
+    aiDirector: "Project Settings",
+    storeName: "Store Name",
+    targetVibe: "Target Vibe",
+    apiKeyLabel: "Google API Key (Optional)",
+    apiKeyPlaceholder: "Only for AI features (Auto-Sort/Intro)",
+    apiKeyHelp: "Leave empty if you only need to merge audio files.",
+    genIntro: "Generate AI Intro (Requires Key)",
+    smartSort: "Smart Sort (Requires Key)",
+    dragDrop: "Click or Drag files here",
+    supports: "Supports MP3, WAV, OGG, MP4",
+    queue: "Queue",
+    clearAll: "Clear All",
+    noTracks: "No tracks added yet.",
+    aiGenerated: "AI Generated",
+    localFile: "Local File",
+    download: "Download Broadcast (WAV)",
+    reset: "Reset",
+    mergeExport: "Merge & Export Audio",
+    processingLocally: "Note: Audio processing happens 100% locally in your browser. No upload required.",
+    
+    // Status messages
+    statusAnalyzing: "AI is listening to the vibe...",
+    statusGenTTS: "AI Host is writing a script...",
+    statusDecoding: "Decoding audio streams...",
+    statusMerging: "Stitching audio tracks together...",
+    statusEncoding: "Encoding final WAV file...",
+    statusReady: "Ready to download!",
+    statusError: "Merge failed. Files might be corrupt or too large.",
+    statusSortError: "Failed to sort: ",
+    statusTTSError: "TTS Failed: ",
+    processingTrack: (current: number, total: number, name: string) => `Processing track ${current}/${total}: ${name}`,
+    aiIntroName: (store: string) => `AI Intro (${store})`,
+    apiKeyMissing: "Please enter your Google API Key in the settings first.",
+
+    vibes: {
+      [VibeType.ENERGETIC]: 'Energetic & Upbeat',
+      [VibeType.RELAXED]: 'Relaxed & Chill',
+      [VibeType.LUXURY]: 'Luxury & Elegant',
+      [VibeType.GYM]: 'High Intensity / Gym',
+      [VibeType.FOCUS]: 'Work & Focus'
+    }
+  },
+  zh: {
+    title: "StoreCast Studio 广播助手",
+    subtitle: "专业店内背景音乐合成工具",
+    secureMode: "离线可用",
+    aiDirector: "项目设置",
+    storeName: "店铺名称",
+    targetVibe: "目标氛围",
+    apiKeyLabel: "Google API Key (选填)",
+    apiKeyPlaceholder: "仅用于 AI 排序和语音生成",
+    apiKeyHelp: "如果您只需要合并音频，请留空。",
+    genIntro: "生成 AI 开场白 (需 Key)",
+    smartSort: "智能排序 (需 Key)",
+    dragDrop: "点击或拖拽文件至此",
+    supports: "支持 MP3, WAV, OGG, MP4",
+    queue: "播放队列",
+    clearAll: "清空",
+    noTracks: "暂无曲目",
+    aiGenerated: "AI 生成",
+    localFile: "本地文件",
+    download: "下载广播文件 (WAV)",
+    reset: "重置",
+    mergeExport: "合并并导出音频",
+    processingLocally: "注意：音频处理 100% 在您的浏览器本地进行，无需上传，无需网络。",
+
+    statusAnalyzing: "AI 正在分析氛围...",
+    statusGenTTS: "AI 主持人正在撰写脚本...",
+    statusDecoding: "正在解码音频流...",
+    statusMerging: "正在拼接音轨...",
+    statusEncoding: "正在编码最终 WAV 文件...",
+    statusReady: "准备下载！",
+    statusError: "合并失败。文件可能损坏或过大。",
+    statusSortError: "排序失败：",
+    statusTTSError: "语音生成失败：",
+    processingTrack: (current: number, total: number, name: string) => `正在处理曲目 ${current}/${total}: ${name}`,
+    aiIntroName: (store: string) => `AI 开场白 (${store})`,
+    apiKeyMissing: "请先在设置中输入您的 Google API Key。",
+
+    vibes: {
+      [VibeType.ENERGETIC]: '充满活力 & 欢快',
+      [VibeType.RELAXED]: '轻松 & 惬意',
+      [VibeType.LUXURY]: '奢华 & 优雅',
+      [VibeType.GYM]: '高强度 / 健身',
+      [VibeType.FOCUS]: '工作 & 专注'
+    }
+  }
+};
