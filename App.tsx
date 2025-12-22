@@ -1,7 +1,9 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Upload, Music, ArrowUp, ArrowDown, X, Play, Download, Wand2, Radio, Loader2, Globe, Key, Settings, ZapOff } from 'lucide-react';
+// @ts-ignore - lamejs lacks types in this env
+import lamejs from 'lamejs';
 import { Track, VibeType, ProcessingState, Language } from './types';
-import { decodeAudio, createWavHeader, audioBufferToWavPCM } from './utils/audio';
+import { decodeAudio, extractPCM16 } from './utils/audio';
 import { generateIntroAudio, sortTracksSmartly } from './services/geminiService';
 import { translations } from './utils/i18n';
 
@@ -129,10 +131,11 @@ const App: React.FC = () => {
       const ctx = getAudioContext();
       if (ctx.state === 'suspended') await ctx.resume();
 
-      // We will store the PCM byte chunks here, NOT the full AudioBuffers
-      const chunks: Uint8Array[] = [];
-      let totalDataLength = 0;
-      
+      // Initialize MP3 Encoder
+      // Stereo (2 channels), Sample Rate from context, 128kbps
+      const mp3Encoder = new (lamejs as any).Mp3Encoder(2, ctx.sampleRate, 128);
+      const mp3Chunks: Int8Array[] = [];
+
       for (let i = 0; i < tracks.length; i++) {
         const track = tracks[i];
         setProcessing({ 
@@ -153,26 +156,38 @@ const App: React.FC = () => {
         }
 
         if (buffer) {
-            // Convert to 16-bit PCM bytes immediately
-            const pcmChunk = audioBufferToWavPCM(buffer);
-            chunks.push(pcmChunk);
-            totalDataLength += pcmChunk.length;
+            // Encode to MP3 immediately per track to save memory
+            setProcessing({ 
+                status: 'merging', 
+                message: `${t.processingTrack(i + 1, tracks.length, track.name)} (MP3...)`, 
+                progress: ((i / tracks.length) * 80) + 5
+            });
+
+            const { left, right } = extractPCM16(buffer);
             
-            // Allow buffer to be garbage collected (by losing reference in next loop iteration)
+            // Encode buffer
+            const mp3Buf = mp3Encoder.encodeBuffer(left, right);
+            if (mp3Buf.length > 0) {
+                mp3Chunks.push(mp3Buf);
+            }
+            
+            // Explicitly release memory
             buffer = null; 
         }
       }
 
-      setProcessing({ status: 'merging', message: t.statusEncoding, progress: 90 });
-      await new Promise(r => setTimeout(r, 100));
+      setProcessing({ status: 'merging', message: t.statusEncoding, progress: 95 });
+      await new Promise(r => setTimeout(r, 50));
 
-      // Create WAV Header
-      // numChannels = 2 (stereo) as enforced by audioBufferToWavPCM
-      const header = createWavHeader(ctx.sampleRate, 2, totalDataLength);
-      
-      // Combine header and chunks into a Blob
-      const wavBlob = new Blob([header, ...chunks], { type: 'audio/wav' });
-      setMergedBlob(wavBlob);
+      // Finalize MP3
+      const endBuf = mp3Encoder.flush();
+      if (endBuf.length > 0) {
+          mp3Chunks.push(endBuf);
+      }
+
+      // Create MP3 Blob
+      const mp3Blob = new Blob(mp3Chunks, { type: 'audio/mp3' });
+      setMergedBlob(mp3Blob);
       
       setProcessing({ status: 'completed', message: t.statusReady, progress: 100 });
 
@@ -363,7 +378,7 @@ const App: React.FC = () => {
                     <div className="flex gap-4">
                          <a 
                             href={URL.createObjectURL(mergedBlob)}
-                            download={`storecast_mix_${new Date().toISOString().slice(0,10)}.wav`}
+                            download={`storecast_mix_${new Date().toISOString().slice(0,10)}.mp3`}
                             className="flex-1 bg-green-600 hover:bg-green-500 text-white rounded-lg h-12 flex items-center justify-center gap-2 font-semibold shadow-lg shadow-green-900/20 transition-all hover:scale-[1.02]"
                         >
                             <Download size={18} /> {t.download}
