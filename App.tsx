@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Upload, Music, ArrowUp, ArrowDown, X, Play, Download, Wand2, Radio, Loader2, Globe, Key, Settings, ZapOff } from 'lucide-react';
 // @ts-ignore - lamejs lacks types in this env
-import lamejs from 'lamejs';
+import { Mp3Encoder } from 'lamejs';
 import { Track, VibeType, ProcessingState, Language } from './types';
 import { decodeAudio, extractPCM16 } from './utils/audio';
 import { generateIntroAudio, sortTracksSmartly } from './services/geminiService';
@@ -133,7 +133,7 @@ const App: React.FC = () => {
 
       // Initialize MP3 Encoder
       // Stereo (2 channels), Sample Rate from context, 128kbps
-      const mp3Encoder = new (lamejs as any).Mp3Encoder(2, ctx.sampleRate, 128);
+      const mp3Encoder = new Mp3Encoder(2, ctx.sampleRate, 128);
       const mp3Chunks: Int8Array[] = [];
 
       for (let i = 0; i < tracks.length; i++) {
@@ -166,6 +166,8 @@ const App: React.FC = () => {
             const { left, right } = extractPCM16(buffer);
             
             // Encode buffer
+            // Note: For very large files, encoding the whole buffer at once might freeze the UI.
+            // Ideally we would chunk this loop too, but for typical songs it's usually acceptable.
             const mp3Buf = mp3Encoder.encodeBuffer(left, right);
             if (mp3Buf.length > 0) {
                 mp3Chunks.push(mp3Buf);
